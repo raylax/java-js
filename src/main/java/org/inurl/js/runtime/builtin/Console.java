@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 /**
  * @author raylax
  */
-public class Console extends JsFunction {
+public class Console extends JsFunction.NativeFunction {
 
     @Function
     public void log(List<AbstractJsObject<Object>> arguments) {

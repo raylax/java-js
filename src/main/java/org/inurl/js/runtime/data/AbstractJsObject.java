@@ -7,9 +7,19 @@ public abstract class AbstractJsObject<T> {
 
     private final JsDataType type;
     protected T value;
+    protected AbstractJsObject<?> defaultValue = JsObject.UNDEFINED;
 
     protected AbstractJsObject(JsDataType type) {
         this.type = type;
+    }
+
+    public AbstractJsObject<T> withDefault(AbstractJsObject<?> defaultValue) {
+        this.defaultValue = defaultValue;
+        return this;
+    }
+
+    public AbstractJsObject<?> getDefaultValue() {
+        return defaultValue;
     }
 
     public boolean isNull() {

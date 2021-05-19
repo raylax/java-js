@@ -6,12 +6,14 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 import org.inurl.js.runtime.builtin.Console;
 import org.inurl.js.runtime.data.AbstractJsObject;
 import org.inurl.js.runtime.data.JsArray;
+import org.inurl.js.runtime.data.JsFunction;
 import org.inurl.js.runtime.data.JsNumber;
 import org.inurl.js.runtime.data.JsObject;
 import org.inurl.js.runtime.data.JsString;
 import org.inurl.js.runtime.data.TypeUtils;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Stack;
@@ -229,7 +231,27 @@ public class ASTEvaluator extends AbstractJsParserVisitor {
             throw makeException(ctx, "Not is callable");
         }
         final AbstractJsObject<?> arguments = visit(ctx.arguments());
-        return left.asFunction().call(arguments.asArray().getValue());
+        final JsFunction function = left.asFunction();
+        final AbstractJsObject<?> result;
+        final List<AbstractJsObject<?>> parameters = arguments.asArray().getValue();
+        final int count = parameters.size();
+        if (!function.isNative()) {
+            pushStack();
+            final List<AbstractJsObject<?>> parameterNames = function.getParameters().getValue();
+            for (int i = 0; i < parameterNames.size(); i++) {
+                final JsString parameterName = parameterNames.get(i).asString();
+                AbstractJsObject<?> value;
+                if ((i > (count - 1)) || (value = parameters.get(i)).isUndefined()) {
+                    value = parameterName.getDefaultValue();
+                }
+                frame.setVariable(parameterName.getValue(), value);
+            }
+            result = function.call(null);
+            popStack();
+        } else {
+            result = function.call(parameters);
+        }
+        return result;
     }
 
     @Override
@@ -255,6 +277,51 @@ public class ASTEvaluator extends AbstractJsParserVisitor {
             value.add(visit(elementContext));
         }
         return new JsArray(value);
+    }
+
+    @Override
+    public AbstractJsObject<?> visitAnonymousFunctionDecl(AnonymousFunctionDeclContext ctx) {
+        final JsFunction function = visit(ctx.functionBody()).asFunction();
+        function.setParameters(visit(ctx.formalParameterList()).asArray());
+        return function;
+    }
+
+    @Override
+    public AbstractJsObject<?> visitFormalParameterList(FormalParameterListContext ctx) {
+        if (ctx == null) {
+            return new JsArray(Collections.emptyList());
+        }
+        final List<FormalParameterArgContext> parameters = ctx.formalParameterArg();
+        List<AbstractJsObject<?>> value = new ArrayList<>(parameters.size());
+        for (FormalParameterArgContext parameterArgContext : parameters) {
+            value.add(visit(parameterArgContext));
+        }
+        return new JsArray(value);
+    }
+
+    @Override
+    public AbstractJsObject<?> visitFormalParameterArg(FormalParameterArgContext ctx) {
+        final AssignableContext assignable = ctx.assignable();
+        AbstractJsObject<?> defaultValue = null;
+        if (is(ctx.Assign())) {
+            defaultValue = visit(ctx.singleExpression());
+        }
+        if (is(assignable.identifier())) {
+            return new JsString(assignable.getText()).withDefault(defaultValue);
+        }
+        if (is(assignable.arrayLiteral())) {
+            UNIMPLEMENTED("arrayLiteral");
+        }
+        if (is(assignable.objectLiteral())) {
+            UNIMPLEMENTED("objectLiteral");
+        }
+        throw UNREACHABLE_CODE();
+    }
+
+    @Override
+    public AbstractJsObject<?> visitFunctionBody(FunctionBodyContext ctx) {
+        System.out.println(ctx.sourceElements().getText());
+        return new JsFunction.RuntimeFunction(this, ctx.sourceElements());
     }
 
     private RuntimeException makeException(ParserRuleContext ctx, String message) {

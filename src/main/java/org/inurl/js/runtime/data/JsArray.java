@@ -1,5 +1,6 @@
 package org.inurl.js.runtime.data;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -8,6 +9,7 @@ import java.util.stream.Collectors;
  */
 public class JsArray extends JsFunction {
 
+    public static final JsArray EMPTY = new JsArray(Collections.emptyList());
 
     public JsArray(List<AbstractJsObject<?>> value) {
         super(JsDataType.ARRAY);
