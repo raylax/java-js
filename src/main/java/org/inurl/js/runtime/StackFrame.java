@@ -13,7 +13,7 @@ import java.util.Optional;
 public class StackFrame implements DataHolder {
 
     private final StackFrame parent;
-    private final Map<String, AbstractJsObject<?>> data;
+    private final Map<Object, AbstractJsObject<?>> data;
     private final int depth;
 
     public StackFrame(StackFrame parent) {
@@ -38,7 +38,7 @@ public class StackFrame implements DataHolder {
         }
     }
 
-    public Optional<AbstractJsObject<?>> getVariable(String name) {
+    public Optional<AbstractJsObject<?>> getVariable(Object name) {
         final AbstractJsObject<?> value = data.get(name);
         if (isRoot() || value != null) {
             return Optional.ofNullable(value);

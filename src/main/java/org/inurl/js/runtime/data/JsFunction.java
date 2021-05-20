@@ -4,6 +4,7 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeVisitor;
 import org.inurl.js.runtime.builtin.Function;
 
+import javax.annotation.Nonnull;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -17,7 +18,7 @@ import java.util.Optional;
  */
 public abstract class JsFunction extends AbstractJsObject<Object> implements DataHolder {
 
-    private final Map<String, AbstractJsObject<?>> data = new HashMap<>();
+    private final Map<Object, AbstractJsObject<?>> data = new HashMap<>();
     private JsArray parameters = JsArray.EMPTY;
     private String name;
 
@@ -55,11 +56,8 @@ public abstract class JsFunction extends AbstractJsObject<Object> implements Dat
                         try {
                             final Object result = method.invoke(that, arguments);
                             final Class<?> returnType = method.getReturnType();
-                            if (returnType == Void.class) {
-                                return JsObject.UNDEFINED;
-                            }
                             if (returnType != AbstractJsObject.class) {
-                                return new JsObject(result);
+                                return JsObject.UNDEFINED;
                             }
                             return (AbstractJsObject<?>) result;
                         } catch (IllegalAccessException | InvocationTargetException e) {
@@ -96,6 +94,16 @@ public abstract class JsFunction extends AbstractJsObject<Object> implements Dat
         public String toString() {
             return "ƒ " + (isAnonymous() ? "(anonymous)" : getName());
         }
+    }
+
+    public void copyTo(@Nonnull JsFunction target) {
+        for (Map.Entry<Object, AbstractJsObject<?>> e : data.entrySet()) {
+            target.setVariable(e.getKey(), e.getValue());
+        }
+    }
+
+    public void copyFrom(@Nonnull JsFunction source) {
+        source.copyTo(this);
     }
 
     public boolean isAnonymous() {
@@ -139,13 +147,16 @@ public abstract class JsFunction extends AbstractJsObject<Object> implements Dat
 
 
     @Override
-    public void setVariable(String name, AbstractJsObject<?> value) {
+    public void setVariable(Object name, AbstractJsObject<?> value) {
         data.put(name, value);
     }
 
     @Override
-    public Optional<AbstractJsObject<?>> getVariable(String name) {
+    public Optional<AbstractJsObject<?>> getVariable(Object name) {
         return Optional.ofNullable(data.get(name));
     }
 
+    public Map<Object, AbstractJsObject<?>> getData() {
+        return data;
+    }
 }

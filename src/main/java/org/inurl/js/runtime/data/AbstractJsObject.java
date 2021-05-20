@@ -56,6 +56,9 @@ public abstract class AbstractJsObject<T> {
     public boolean isBoolean() {
         return is(JsDataType.BOOLEAN);
     }
+    public boolean isObject() {
+        return is(JsDataType.OBJECT);
+    }
     /* IS END */
 
 
@@ -78,6 +81,9 @@ public abstract class AbstractJsObject<T> {
     public JsBoolean asBoolean() {
         return (JsBoolean) this;
     }
+    public JsObject asObject() {
+        return (JsObject) this;
+    }
     /* CAST END */
 
     /* OVERRIDE */
@@ -88,6 +94,10 @@ public abstract class AbstractJsObject<T> {
 
     private boolean is(JsDataType type) {
         return this.type == type;
+    }
+
+    public JsDataType getType() {
+        return type;
     }
 
     @Override

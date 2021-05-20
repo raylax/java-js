@@ -31,13 +31,22 @@ public class JsObject extends JsFunction {
         }
     };
 
-    protected JsObject(Object value) {
+    public JsObject() {
         super(JsDataType.OBJECT);
-        this.value = value;
+    }
+
+    public JsObject(Object name, AbstractJsObject<?> value) {
+        this();
+        setVariable(name, value);
     }
 
     @Override
     public String display() {
         return "object";
+    }
+
+    @Override
+    public String toString() {
+        return "[object Object]";
     }
 }

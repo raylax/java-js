@@ -114,8 +114,7 @@ public class ASTEvaluator extends AbstractJsParserVisitor {
             return TypeUtils.wrapBoolean(ctx.getText());
         }
         if (is(ctx.StringLiteral())) {
-            final String text = ctx.getText();
-            return new JsString(text.substring(1, text.length() - 1));
+            return visitStringLiteral(ctx.StringLiteral());
         }
         if (is(ctx.TemplateStringLiteral())) {
             UNIMPLEMENTED("TemplateStringLiteral");
@@ -312,10 +311,10 @@ public class ASTEvaluator extends AbstractJsParserVisitor {
             return new JsString(assignable.getText()).withDefault(defaultValue);
         }
         if (is(assignable.arrayLiteral())) {
-            UNIMPLEMENTED("arrayLiteral");
+            return visit(assignable.arrayLiteral());
         }
         if (is(assignable.objectLiteral())) {
-            UNIMPLEMENTED("objectLiteral");
+            return visit(assignable.objectLiteral());
         }
         throw UNREACHABLE_CODE();
     }
@@ -386,6 +385,44 @@ public class ASTEvaluator extends AbstractJsParserVisitor {
         }
 
         return result;
+    }
+
+    @Override
+    public AbstractJsObject<?> visitObjectLiteral(ObjectLiteralContext ctx) {
+        JsObject result = new JsObject();
+        for (PropertyAssignmentContext propertyAssignmentContext : ctx.propertyAssignment()) {
+            final AbstractJsObject<?> property = visit(propertyAssignmentContext);
+            result.copyFrom(property.asObject());
+        }
+        return result;
+    }
+
+    @Override
+    public AbstractJsObject<?> visitPropertyExpressionAssignment(PropertyExpressionAssignmentContext ctx) {
+        return new JsObject(visit(ctx.propertyName()).getValue(), visit(ctx.singleExpression()));
+    }
+
+    @Override
+    public AbstractJsObject<?> visitComputedPropertyExpressionAssignment(ComputedPropertyExpressionAssignmentContext ctx) {
+        Object name = visit(ctx.singleExpression(0)).getValue();
+        final AbstractJsObject<?> value = visit(ctx.singleExpression(1));
+        return new JsObject(name, value);
+    }
+
+    @Override
+    public AbstractJsObject<?> visitPropertyName(PropertyNameContext ctx) {
+        if (is(ctx.StringLiteral())) {
+            return visitStringLiteral(ctx.StringLiteral());
+        }
+        if (is(ctx.singleExpression())) {
+            return visit(ctx.singleExpression());
+        }
+        return visit(ctx);
+    }
+
+    public JsString visitStringLiteral(TerminalNode ctx) {
+        final String text = ctx.getText();
+        return new JsString(text.substring(1, text.length() - 1));
     }
 
     private RuntimeException makeException(ParserRuleContext ctx, String message) {

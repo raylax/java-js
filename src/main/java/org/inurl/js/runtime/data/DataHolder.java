@@ -7,15 +7,15 @@ import java.util.Optional;
  */
 public interface DataHolder {
 
-    default void letVariable(String name, AbstractJsObject<?> value) {
+    default void letVariable(Object name, AbstractJsObject<?> value) {
         throw new UnsupportedOperationException();
     }
 
-    default void setVariable(String name, AbstractJsObject<?> value) {
+    default void setVariable(Object name, AbstractJsObject<?> value) {
         throw new UnsupportedOperationException();
     }
 
-    default Optional<AbstractJsObject<?>> getVariable(String name) {
+    default Optional<AbstractJsObject<?>> getVariable(Object name) {
         throw new UnsupportedOperationException();
     }
 
