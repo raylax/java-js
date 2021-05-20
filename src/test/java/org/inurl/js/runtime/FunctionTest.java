@@ -33,5 +33,10 @@ class FunctionTest extends BaseTest {
 
     }
 
+    @Test
+    public void testNested() {
+        assertEq(runFromString("function a() { let b = () => 666; return b }; return a()();"), 666);
+    }
+
 
 }
