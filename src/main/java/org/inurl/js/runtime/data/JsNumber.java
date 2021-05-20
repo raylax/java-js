@@ -125,4 +125,9 @@ public class JsNumber extends AbstractJsObject<Double> {
         }
         return FORMAT.format(getValue());
     }
+
+    @Override
+    public JsBoolean asBoolean() {
+        return (isNan() || getValue() == 0) ? JsBoolean.FALSE : JsBoolean.TRUE;
+    }
 }

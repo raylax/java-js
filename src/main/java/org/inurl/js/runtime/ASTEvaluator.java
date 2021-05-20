@@ -9,6 +9,7 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 import org.inurl.js.runtime.builtin.Console;
 import org.inurl.js.runtime.data.AbstractJsObject;
 import org.inurl.js.runtime.data.JsArray;
+import org.inurl.js.runtime.data.JsBoolean;
 import org.inurl.js.runtime.data.JsFunction;
 import org.inurl.js.runtime.data.JsNumber;
 import org.inurl.js.runtime.data.JsObject;
@@ -420,7 +421,29 @@ public class ASTEvaluator extends AbstractJsParserVisitor {
         return visit(ctx);
     }
 
-    public JsString visitStringLiteral(TerminalNode ctx) {
+    @Override
+    public AbstractJsObject<?> visitIfStatement(IfStatementContext ctx) {
+        final JsBoolean condition = visit(ctx.expressionSequence()).asBoolean();
+        AbstractJsObject<?> result = UNDEFINED;
+        pushStack();
+        if (condition.getValue()) {
+            result = visitUnwrapStatement(ctx.statement(0));
+        } else if (is(ctx.Else())) {
+            result = visitUnwrapStatement(ctx.statement(1));
+        }
+        popStack();
+        return result;
+    }
+
+    private AbstractJsObject<?> visitUnwrapStatement(StatementContext ctx) {
+        if (is(ctx.block())) {
+            return visit(ctx.block().statementList());
+        } else {
+            return visit(ctx);
+        }
+    }
+
+    private JsString visitStringLiteral(TerminalNode ctx) {
         final String text = ctx.getText();
         return new JsString(text.substring(1, text.length() - 1));
     }
