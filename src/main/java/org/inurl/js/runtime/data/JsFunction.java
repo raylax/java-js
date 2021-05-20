@@ -19,6 +19,7 @@ public abstract class JsFunction extends AbstractJsObject<Object> implements Dat
 
     private final Map<String, AbstractJsObject<?>> data = new HashMap<>();
     private JsArray parameters = JsArray.EMPTY;
+    private String name;
 
     JsFunction() {
         this(JsDataType.FUNCTION);
@@ -84,6 +85,23 @@ public abstract class JsFunction extends AbstractJsObject<Object> implements Dat
         public boolean isNative() {
             return false;
         }
+
+        @Override
+        public String toString() {
+            return "ƒ " + (isAnonymous() ? "(anonymous)" : getName());
+        }
+    }
+
+    public boolean isAnonymous() {
+        return name == null || name.length() == 0;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getName() {
+        return name;
     }
 
     public boolean isNative() {

@@ -11,7 +11,7 @@ public class JsArray extends JsFunction {
 
     public static final JsArray EMPTY = new JsArray(Collections.emptyList());
 
-    public JsArray(List<AbstractJsObject<?>> value) {
+    public JsArray(List<? extends AbstractJsObject<?>> value) {
         super(JsDataType.ARRAY);
         this.value = value;
     }

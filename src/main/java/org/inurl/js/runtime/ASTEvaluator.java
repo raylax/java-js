@@ -320,8 +320,44 @@ public class ASTEvaluator extends AbstractJsParserVisitor {
 
     @Override
     public AbstractJsObject<?> visitFunctionBody(FunctionBodyContext ctx) {
-        System.out.println(ctx.sourceElements().getText());
         return new JsFunction.RuntimeFunction(this, ctx.sourceElements());
+    }
+
+    @Override
+    public AbstractJsObject<?> visitFunctionDeclaration(FunctionDeclarationContext ctx) {
+        final JsFunction function = visit(ctx.functionBody()).asFunction();
+        function.setParameters(visit(ctx.formalParameterList()).asArray());
+        final String name = ctx.identifier().getText();
+        function.setName(name);
+        frame.setVariable(name, function);
+        return function;
+    }
+
+    @Override
+    public AbstractJsObject<?> visitArrowFunction(ArrowFunctionContext ctx) {
+        final JsFunction function = visit(ctx.arrowFunctionBody()).asFunction();
+        final ArrowFunctionParametersContext parametersContext = ctx.arrowFunctionParameters();
+        final IdentifierContext identifier = parametersContext.identifier();
+        if (is(identifier)) {
+            final List<JsString> parameters = Collections.singletonList(new JsString(identifier.getText()));
+            function.setParameters(new JsArray(parameters));
+        }
+        final FormalParameterListContext parameterListContext = parametersContext.formalParameterList();
+        if (is(parameterListContext)) {
+            function.setParameters(visit(parameterListContext).asArray());
+        }
+        return function;
+    }
+
+    @Override
+    public AbstractJsObject<?> visitArrowFunctionBody(ArrowFunctionBodyContext ctx) {
+        if (is(ctx.singleExpression())) {
+            return new JsFunction.RuntimeFunction(this, ctx.singleExpression());
+        }
+        if (is(ctx.functionBody())) {
+            return visit(ctx.functionBody());
+        }
+        throw UNREACHABLE_CODE();
     }
 
     private RuntimeException makeException(ParserRuleContext ctx, String message) {
