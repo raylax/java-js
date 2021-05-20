@@ -406,9 +406,7 @@ public class ASTEvaluator extends AbstractJsParserVisitor {
 
     @Override
     public AbstractJsObject<?> visitComputedPropertyExpressionAssignment(ComputedPropertyExpressionAssignmentContext ctx) {
-        Object name = visit(ctx.singleExpression(0)).getValue();
-        final AbstractJsObject<?> value = visit(ctx.singleExpression(1));
-        return new JsObject(name, value);
+        return new JsObject(visit(ctx.singleExpression(0)).getValue(), visit(ctx.singleExpression(1)));
     }
 
     @Override
@@ -468,6 +466,16 @@ public class ASTEvaluator extends AbstractJsParserVisitor {
         }
         popStack();
         return result;
+    }
+
+    @Override
+    public AbstractJsObject<?> visitBreakStatement(BreakStatementContext ctx) {
+        return JsControl.BREAK;
+    }
+
+    @Override
+    public AbstractJsObject<?> visitContinueStatement(ContinueStatementContext ctx) {
+        return JsControl.CONTINUE;
     }
 
     @Override

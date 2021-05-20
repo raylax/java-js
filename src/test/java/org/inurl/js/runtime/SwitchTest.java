@@ -15,9 +15,11 @@ class SwitchTest extends BaseTest {
         assertEq(runFromString("switch (2) { case 1:case 2:case 3: return 3; default: return 666; }"), 3);
         assertEq(runFromString("switch (3) { case 1:case 2:case 3: return 3; default: return 666; }"), 3);
         assertEq(runFromString("switch (4) { case 1:case 2:case 3: return 3; default: return 666; }"), 666);
+        assertEq(runFromString("switch (3) { case 1:case 2: default: return 666; case 3: return 3; }"), 3);
 
 
         assertEq(runFromString("switch (1) { case 1:case 2: { console.error(1); } case 3: return 3; default: return 666; }"), 3);
+        runFromString("switch (1) { case 1: { console.error(1) } case 2: { console.error(2); break; } case 3: { console.error(3) } default: return 666; }");
     }
 
 }
