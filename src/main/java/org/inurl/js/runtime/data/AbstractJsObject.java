@@ -53,6 +53,9 @@ public abstract class AbstractJsObject<T> {
     public boolean isString() {
         return is(JsDataType.STRING);
     }
+    public boolean isBoolean() {
+        return is(JsDataType.BOOLEAN);
+    }
     /* IS END */
 
 
@@ -71,6 +74,9 @@ public abstract class AbstractJsObject<T> {
     }
     public JsArray asArray() {
         return (JsArray) this;
+    }
+    public JsBoolean asBoolean() {
+        return (JsBoolean) this;
     }
     /* CAST END */
 

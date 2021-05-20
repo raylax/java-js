@@ -54,10 +54,14 @@ public abstract class JsFunction extends AbstractJsObject<Object> implements Dat
                     public AbstractJsObject<?> call(List<AbstractJsObject<?>> arguments) {
                         try {
                             final Object result = method.invoke(that, arguments);
-                            if (method.getReturnType() == Void.class) {
+                            final Class<?> returnType = method.getReturnType();
+                            if (returnType == Void.class) {
                                 return JsObject.UNDEFINED;
                             }
-                            return new JsObject(result);
+                            if (returnType != AbstractJsObject.class) {
+                                return new JsObject(result);
+                            }
+                            return (AbstractJsObject<?>) result;
                         } catch (IllegalAccessException | InvocationTargetException e) {
                             throw new RuntimeException(e);
                         }
@@ -78,7 +82,9 @@ public abstract class JsFunction extends AbstractJsObject<Object> implements Dat
 
         @Override
         public AbstractJsObject<?> call(List<AbstractJsObject<?>> arguments) {
-            return visitor.visit(tree);
+            final AbstractJsObject<?> result = visitor.visit(tree);
+
+            return result;
         }
 
         @Override

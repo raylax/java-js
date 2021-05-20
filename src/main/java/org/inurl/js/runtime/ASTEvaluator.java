@@ -1,7 +1,10 @@
 package org.inurl.js.runtime;
 
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.TokenSource;
+import org.antlr.v4.runtime.tree.ParseTree;
+import org.antlr.v4.runtime.tree.RuleNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
 import org.inurl.js.runtime.builtin.Console;
 import org.inurl.js.runtime.data.AbstractJsObject;
@@ -234,23 +237,22 @@ public class ASTEvaluator extends AbstractJsParserVisitor {
         final JsFunction function = left.asFunction();
         final AbstractJsObject<?> result;
         final List<AbstractJsObject<?>> parameters = arguments.asArray().getValue();
-        final int count = parameters.size();
-        if (!function.isNative()) {
-            pushStack();
-            final List<AbstractJsObject<?>> parameterNames = function.getParameters().getValue();
-            for (int i = 0; i < parameterNames.size(); i++) {
-                final JsString parameterName = parameterNames.get(i).asString();
-                AbstractJsObject<?> value;
-                if ((i > (count - 1)) || (value = parameters.get(i)).isUndefined()) {
-                    value = parameterName.getDefaultValue();
-                }
-                frame.setVariable(parameterName.getValue(), value);
-            }
-            result = function.call(null);
-            popStack();
-        } else {
-            result = function.call(parameters);
+        if (function.isNative()) {
+            return function.call(parameters);
         }
+        pushStack();
+        final int count = parameters.size();
+        final List<AbstractJsObject<?>> parameterNames = function.getParameters().getValue();
+        for (int i = 0; i < parameterNames.size(); i++) {
+            final JsString parameterName = parameterNames.get(i).asString();
+            AbstractJsObject<?> value;
+            if ((i > (count - 1)) || (value = parameters.get(i)).isUndefined()) {
+                value = parameterName.getDefaultValue();
+            }
+            frame.setVariable(parameterName.getValue(), value);
+        }
+        result = function.call(null);
+        popStack();
         return result;
     }
 
@@ -282,7 +284,7 @@ public class ASTEvaluator extends AbstractJsParserVisitor {
     @Override
     public AbstractJsObject<?> visitAnonymousFunctionDecl(AnonymousFunctionDeclContext ctx) {
         final JsFunction function = visit(ctx.functionBody()).asFunction();
-        function.setParameters(visit(ctx.formalParameterList()).asArray());
+        function.setParameters(visitFormalParameterList(ctx.formalParameterList()).asArray());
         return function;
     }
 
@@ -326,7 +328,10 @@ public class ASTEvaluator extends AbstractJsParserVisitor {
     @Override
     public AbstractJsObject<?> visitFunctionDeclaration(FunctionDeclarationContext ctx) {
         final JsFunction function = visit(ctx.functionBody()).asFunction();
-        function.setParameters(visit(ctx.formalParameterList()).asArray());
+        final FormalParameterListContext formalParameterList = ctx.formalParameterList();
+        if (is(formalParameterList)) {
+            function.setParameters(visit(formalParameterList).asArray());
+        }
         final String name = ctx.identifier().getText();
         function.setName(name);
         frame.setVariable(name, function);
@@ -358,6 +363,29 @@ public class ASTEvaluator extends AbstractJsParserVisitor {
             return visit(ctx.functionBody());
         }
         throw UNREACHABLE_CODE();
+    }
+
+    @Override
+    public AbstractJsObject<?> visitReturnStatement(ReturnStatementContext ctx) {
+        return visit(ctx.expressionSequence());
+    }
+
+
+    @Override
+    public AbstractJsObject<?> visitChildren(RuleNode node) {
+        AbstractJsObject<?> result = defaultResult();
+        int n = node.getChildCount();
+        for (int i = 0; i < n; i++) {
+            ParseTree c = node.getChild(i);
+            if (c instanceof EosContext
+                    || (c instanceof TerminalNode && ((TerminalNode) c).getSymbol().getType() == Token.EOF)) {
+                break;
+            }
+            AbstractJsObject<?> childResult = c.accept(this);
+            result = aggregateResult(result, childResult);
+        }
+
+        return result;
     }
 
     private RuntimeException makeException(ParserRuleContext ctx, String message) {
