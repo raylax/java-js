@@ -10,6 +10,7 @@ import org.inurl.js.runtime.builtin.Console;
 import org.inurl.js.runtime.data.AbstractJsObject;
 import org.inurl.js.runtime.data.JsArray;
 import org.inurl.js.runtime.data.JsBoolean;
+import org.inurl.js.runtime.data.JsControl;
 import org.inurl.js.runtime.data.JsFunction;
 import org.inurl.js.runtime.data.JsNumber;
 import org.inurl.js.runtime.data.JsObject;
@@ -432,6 +433,53 @@ public class ASTEvaluator extends AbstractJsParserVisitor {
             result = visitUnwrapStatement(ctx.statement(1));
         }
         popStack();
+        return result;
+    }
+
+    @Override
+    public AbstractJsObject<?> visitSwitchStatement(SwitchStatementContext ctx) {
+        final AbstractJsObject<?> expressionValue = visit(ctx.expressionSequence());
+        AbstractJsObject<?> result = UNDEFINED;
+        pushStack();
+        final CaseBlockContext block = ctx.caseBlock();
+        final List<CaseClauseContext> caseClauseContexts = block.caseClauses(0).caseClause();
+        if (is(block.caseClauses(1))) {
+            caseClauseContexts.addAll(block.caseClauses(1).caseClause());
+        }
+        boolean matched = false;
+        for (CaseClauseContext caseClauseContext : caseClauseContexts) {
+            final StatementListContext statementListContext = caseClauseContext.statementList();
+            if ((matched || (matched = visit(caseClauseContext.expressionSequence()).equals(expressionValue)))
+                    && statementListContext != null) {
+                final AbstractJsObject<?> r = visitUnwrapStatementList(statementListContext);
+                // 说明return了
+                if (!r.isUndefined()) {
+                    result = r;
+                    break;
+                }
+                // break
+                if (r == JsControl.BREAK) {
+                    break;
+                }
+            }
+        }
+        if (!matched && is(block.defaultClause())) {
+            result = visit(block.defaultClause().statementList());
+        }
+        popStack();
+        return result;
+    }
+
+    @Override
+    protected AbstractJsObject<?> defaultResult() {
+        return UNDEFINED;
+    }
+
+    private AbstractJsObject<?> visitUnwrapStatementList(StatementListContext ctx) {
+        AbstractJsObject<?> result = defaultResult();
+        for (StatementContext statementContext : ctx.statement()) {
+            result = visitUnwrapStatement(statementContext);
+        }
         return result;
     }
 

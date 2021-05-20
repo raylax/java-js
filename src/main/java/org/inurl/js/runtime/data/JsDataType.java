@@ -15,6 +15,8 @@ public enum JsDataType {
     OBJECT("object"),
     ARRAY("array"),
     FUNCTION("function"),
+    // --
+    CTRL("ctrl"),
     ;
 
     private final String desc;
