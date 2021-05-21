@@ -39,7 +39,7 @@ public class ASTEvaluator extends AbstractJsParserVisitor {
     @Override
     public AbstractJsObject<?> visitProgram(ProgramContext ctx) {
         initStack();
-        return super.visitProgram(ctx);
+        return unWrapValue(super.visitProgram(ctx));
     }
 
     @Override
@@ -47,7 +47,7 @@ public class ASTEvaluator extends AbstractJsParserVisitor {
         pushStack();
         final AbstractJsObject<?> result = super.visitBlock(ctx);
         popStack();
-        return result;
+        return unWrapValue(result);
     }
 
     @Override
@@ -62,7 +62,7 @@ public class ASTEvaluator extends AbstractJsParserVisitor {
     public AbstractJsObject<?> visitAssignmentExpression(AssignmentExpressionContext ctx) {
         final String name = ctx.singleExpression(0).getText();
         AbstractJsObject<?> value = visit(ctx.singleExpression(1));
-        frame.setVariable(name, value);
+        setVariable(name, value);
         return value;
     }
 
@@ -230,7 +230,7 @@ public class ASTEvaluator extends AbstractJsParserVisitor {
 
     @Override
     public AbstractJsObject<?> visitArgumentsExpression(ArgumentsExpressionContext ctx) {
-        final AbstractJsObject<?> left = visit(ctx.singleExpression());
+        final AbstractJsObject<?> left = unWrapValue(visit(ctx.singleExpression()));
         if (!left.isFunction()) {
             throw makeException(ctx, "Not is callable");
         }
@@ -250,11 +250,11 @@ public class ASTEvaluator extends AbstractJsParserVisitor {
             if ((i > (count - 1)) || (value = parameters.get(i)).isUndefined()) {
                 value = parameterName.getDefaultValue();
             }
-            frame.setVariable(parameterName.getValue(), value);
+            setVariable(parameterName.getValue(), value);
         }
         result = function.call(null);
         popStack();
-        return result;
+        return unWrapValue(result);
     }
 
     @Override
@@ -335,7 +335,7 @@ public class ASTEvaluator extends AbstractJsParserVisitor {
         }
         final String name = ctx.identifier().getText();
         function.setName(name);
-        frame.setVariable(name, function);
+        setVariable(name, function);
         return function;
     }
 
@@ -365,12 +365,6 @@ public class ASTEvaluator extends AbstractJsParserVisitor {
         }
         throw UNREACHABLE_CODE();
     }
-
-    @Override
-    public AbstractJsObject<?> visitReturnStatement(ReturnStatementContext ctx) {
-        return visit(ctx.expressionSequence());
-    }
-
 
     @Override
     public AbstractJsObject<?> visitChildren(RuleNode node) {
@@ -436,9 +430,9 @@ public class ASTEvaluator extends AbstractJsParserVisitor {
 
     @Override
     public AbstractJsObject<?> visitSwitchStatement(SwitchStatementContext ctx) {
+        pushStack();
         final AbstractJsObject<?> expressionValue = visit(ctx.expressionSequence());
         AbstractJsObject<?> result = UNDEFINED;
-        pushStack();
         final CaseBlockContext block = ctx.caseBlock();
         final List<CaseClauseContext> caseClauseContexts = block.caseClauses(0).caseClause();
         if (is(block.caseClauses(1))) {
@@ -450,14 +444,14 @@ public class ASTEvaluator extends AbstractJsParserVisitor {
             if ((matched || (matched = visit(caseClauseContext.expressionSequence()).equals(expressionValue)))
                     && statementListContext != null) {
                 final AbstractJsObject<?> r = visitUnwrapStatementList(statementListContext);
-                // 说明return了
-                if (!r.isUndefined()) {
-                    result = r;
-                    break;
-                }
-                // break
-                if (r == JsControl.BREAK) {
-                    break;
+                if (r.isCtrl()) {
+                    final JsControl ctrl = r.asCtrl();
+                    if (ctrl.isReturn()) {
+                        return ctrl.getValue();
+                    }
+                    if (ctrl.isBreak()) {
+                        break;
+                    }
                 }
             }
         }
@@ -469,13 +463,33 @@ public class ASTEvaluator extends AbstractJsParserVisitor {
     }
 
     @Override
+    public AbstractJsObject<?> visitDoStatement(DoStatementContext ctx) {
+        return super.visitDoStatement(ctx);
+    }
+
+    @Override
+    public AbstractJsObject<?> visitWhileStatement(WhileStatementContext ctx) {
+        return super.visitWhileStatement(ctx);
+    }
+
+    @Override
+    public AbstractJsObject<?> visitForStatement(ForStatementContext ctx) {
+        return super.visitForStatement(ctx);
+    }
+
+    @Override
     public AbstractJsObject<?> visitBreakStatement(BreakStatementContext ctx) {
-        return JsControl.BREAK;
+        return JsControl.doBreak();
     }
 
     @Override
     public AbstractJsObject<?> visitContinueStatement(ContinueStatementContext ctx) {
-        return JsControl.CONTINUE;
+        return JsControl.doContinue();
+    }
+
+    @Override
+    public AbstractJsObject<?> visitReturnStatement(ReturnStatementContext ctx) {
+        return JsControl.doReturn(visit(ctx.expressionSequence()));
     }
 
     @Override
@@ -512,7 +526,7 @@ public class ASTEvaluator extends AbstractJsParserVisitor {
     private void initStack() {
         pushStack();
         // builtin object
-        frame.setVariable("console", new Console());
+        setVariable("console", new Console());
     }
 
     private void pushStack() {
@@ -523,6 +537,21 @@ public class ASTEvaluator extends AbstractJsParserVisitor {
     private void popStack() {
         stack.pop();
         frame = stack.peek();
+    }
+
+    private AbstractJsObject<?> unWrapValue(AbstractJsObject<?> value) {
+        if (value.isCtrl()) {
+            final JsControl ctrl = value.asCtrl();
+            if (!ctrl.isReturn()) {
+                throw new IllegalStateException();
+            }
+            value = ctrl.getValue();
+        }
+        return value;
+    }
+
+    private void setVariable(String name, AbstractJsObject<?> value) {
+        frame.setVariable(name, unWrapValue(value));
     }
 
     private boolean is(Object value) {

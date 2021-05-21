@@ -59,6 +59,9 @@ public abstract class AbstractJsObject<T> {
     public boolean isObject() {
         return is(JsDataType.OBJECT);
     }
+    public boolean isCtrl() {
+        return is(JsDataType.CTRL);
+    }
     /* IS END */
 
 
@@ -83,6 +86,9 @@ public abstract class AbstractJsObject<T> {
     }
     public JsObject asObject() {
         return (JsObject) this;
+    }
+    public JsControl asCtrl() {
+        return (JsControl) this;
     }
     /* CAST END */
 
