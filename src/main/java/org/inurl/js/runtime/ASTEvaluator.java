@@ -321,6 +321,48 @@ public class ASTEvaluator extends AbstractJsParserVisitor {
         throw UNREACHABLE_CODE();
     }
 
+    /**
+     * n++
+     */
+    @Override
+    public AbstractJsObject<?> visitPostIncrementExpression(PostIncrementExpressionContext ctx) {
+        final JsNumber result = visit(ctx.singleExpression()).asNumber();
+        final AbstractJsObject<?> newResult = result.copy();
+        result.setValue(v -> ++v);
+        return newResult;
+    }
+
+    /**
+     * n--
+     */
+    @Override
+    public AbstractJsObject<?> visitPostDecreaseExpression(PostDecreaseExpressionContext ctx) {
+        final JsNumber result = visit(ctx.singleExpression()).asNumber();
+        final AbstractJsObject<?> newResult = result.copy();
+        result.setValue(v -> --v);
+        return newResult;
+    }
+
+    /**
+     * ++n
+     */
+    @Override
+    public AbstractJsObject<?> visitPreIncrementExpression(PreIncrementExpressionContext ctx) {
+        final JsNumber result = visit(ctx.singleExpression()).asNumber();
+        result.setValue(v -> ++v);
+        return result;
+    }
+
+    /**
+     * --n
+     */
+    @Override
+    public AbstractJsObject<?> visitPreDecreaseExpression(PreDecreaseExpressionContext ctx) {
+        final JsNumber result = visit(ctx.singleExpression()).asNumber();
+        result.setValue(v -> --v);
+        return result;
+    }
+
     @Override
     public AbstractJsObject<?> visitFunctionBody(FunctionBodyContext ctx) {
         return new JsFunction.RuntimeFunction(this, ctx.sourceElements());
@@ -377,6 +419,9 @@ public class ASTEvaluator extends AbstractJsParserVisitor {
                 break;
             }
             AbstractJsObject<?> childResult = c.accept(this);
+            if (childResult.isCtrl()) {
+                return childResult;
+            }
             result = aggregateResult(result, childResult);
         }
 
@@ -414,6 +459,9 @@ public class ASTEvaluator extends AbstractJsParserVisitor {
         return visit(ctx);
     }
 
+    /**
+     * if () { } else if () { } else { }
+     */
     @Override
     public AbstractJsObject<?> visitIfStatement(IfStatementContext ctx) {
         final JsBoolean condition = visit(ctx.expressionSequence()).asBoolean();
@@ -428,6 +476,9 @@ public class ASTEvaluator extends AbstractJsParserVisitor {
         return result;
     }
 
+    /**
+     * switch () { case a: case b: case c: { } default: { } }
+     */
     @Override
     public AbstractJsObject<?> visitSwitchStatement(SwitchStatementContext ctx) {
         pushStack();
@@ -460,22 +511,108 @@ public class ASTEvaluator extends AbstractJsParserVisitor {
             result = visit(block.defaultClause().statementList());
         }
         popStack();
-        return unWrapValue(result);
+        return result;
     }
 
+    /**
+     * do { } while ()
+     */
     @Override
     public AbstractJsObject<?> visitDoStatement(DoStatementContext ctx) {
-        return super.visitDoStatement(ctx);
+        return visitLoopInStack(true, ctx.expressionSequence(), ctx.statement());
     }
 
+    /**
+     * while () { }
+     */
     @Override
     public AbstractJsObject<?> visitWhileStatement(WhileStatementContext ctx) {
-        return super.visitWhileStatement(ctx);
+        return visitLoopInStack(false, ctx.expressionSequence(), ctx.statement());
     }
 
+    /**
+     * for () { }
+     */
     @Override
     public AbstractJsObject<?> visitForStatement(ForStatementContext ctx) {
-        return super.visitForStatement(ctx);
+        pushStack();
+        if (is(ctx.variableDeclarationList())) {
+            visit(ctx.variableDeclarationList());
+        }
+        ExpressionSequenceContext postContext = null;
+        ExpressionSequenceContext conditionContext = null;
+        ExpressionSequenceContext initializationContext = null;
+        /*
+         * for -> ( -> ; -> ; -> )
+         * 0      1    2    3    4
+         */
+        int idx = -1;
+        for (int i = 0; i < ctx.getChildCount(); i++) {
+            final ParseTree c = ctx.getChild(i);
+            if (c instanceof ExpressionSequenceContext) {
+                ExpressionSequenceContext expressionSequenceContext = (ExpressionSequenceContext) c;
+                switch (idx) {
+                    case 1:
+                        initializationContext = expressionSequenceContext;
+                        break;
+                    case 2:
+                        conditionContext = expressionSequenceContext;
+                        break;
+                    case 3:
+                        postContext = expressionSequenceContext;
+                        break;
+                    default:
+                        throw new IllegalStateException();
+                }
+            }
+            if (c instanceof TerminalNode) {
+                idx++;
+            }
+        }
+        if (is(initializationContext)) {
+            visit(initializationContext);
+        }
+        AbstractJsObject<?> result = visitLoop(false, postContext, conditionContext, ctx.statement());
+        popStack();
+        return result;
+    }
+
+    private AbstractJsObject<?> visitLoopInStack(
+            boolean first, ExpressionSequenceContext conditionContext, StatementContext statementContext) {
+        pushStack();
+        AbstractJsObject<?> result = visitLoop(first, null, conditionContext, statementContext);
+        popStack();
+        return result;
+    }
+
+    private AbstractJsObject<?> visitLoop(
+            boolean first, ExpressionSequenceContext postContext,
+            ExpressionSequenceContext conditionContext, StatementContext statementContext) {
+        AbstractJsObject<?> result = UNDEFINED;
+        while (true) {
+            if (first) {
+                first = false;
+            } else {
+                if (is(conditionContext) && !visit(conditionContext).asBoolean().getValue()) {
+                    break;
+                }
+            }
+            AbstractJsObject<?> c = visitUnwrapStatement(statementContext);
+            if (c.isCtrl()) {
+                final JsControl ctrl = c.asCtrl();
+                if (ctrl.isReturn()) {
+                    result = c;
+                    break;
+                }
+                if (ctrl.isBreak()) {
+                    break;
+                }
+            }
+            if (is(postContext)) {
+                visit(postContext);
+            }
+        }
+        return result;
     }
 
     @Override
@@ -507,8 +644,9 @@ public class ASTEvaluator extends AbstractJsParserVisitor {
     }
 
     private AbstractJsObject<?> visitUnwrapStatement(StatementContext ctx) {
-        if (is(ctx.block())) {
-            return visit(ctx.block().statementList());
+        final BlockContext blockContext = ctx.block();
+        if (is(blockContext) && is(blockContext.statementList())) {
+            return visit(blockContext.statementList());
         } else {
             return visit(ctx);
         }
@@ -543,16 +681,15 @@ public class ASTEvaluator extends AbstractJsParserVisitor {
     private AbstractJsObject<?> unWrapValue(AbstractJsObject<?> value) {
         if (value.isCtrl()) {
             final JsControl ctrl = value.asCtrl();
-            if (!ctrl.isReturn()) {
-                throw new IllegalStateException();
+            if (ctrl.isReturn()) {
+                return ctrl.getValue();
             }
-            value = ctrl.getValue();
         }
         return value;
     }
 
     private void setVariable(String name, AbstractJsObject<?> value) {
-        frame.setVariable(name, unWrapValue(value));
+        frame.setVariable(name, unWrapValue(value).copy());
     }
 
     private boolean is(Object value) {

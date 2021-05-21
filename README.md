@@ -8,7 +8,9 @@
 - [x] 块级作用域
 - [x] 方法
 - [x] 方法默认值
+- [x] 自增减
 ### 流程控制
 - [x] if-else
 - [x] switch-case
+- [x] for-i/while/do-while
 

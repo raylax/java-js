@@ -1,5 +1,7 @@
 package org.inurl.js.runtime.data;
 
+import java.util.function.Function;
+
 /**
  * @author raylax
  */
@@ -34,6 +36,11 @@ public abstract class AbstractJsObject<T> {
         return is(JsDataType.FUNCTION);
     }
 
+
+    public void setValue(Function<T, T> function) {
+        this.value = function.apply(this.value);
+    }
+
     public void setValue(T value) {
         this.value = value;
     }
@@ -41,6 +48,12 @@ public abstract class AbstractJsObject<T> {
     public T getValue() {
         return this.value;
     }
+
+
+    public AbstractJsObject<?> copy() {
+        return this;
+    }
+
 
     public String display() {
         return String.valueOf(getValue());

@@ -30,6 +30,10 @@ public class JsNumber extends AbstractJsObject<Double> {
         return this.isNan() || other.isNan();
     }
 
+    public AbstractJsObject<?> copy() {
+        return new JsNumber(this.value);
+    }
+
     /**
      * +
      */

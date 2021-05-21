@@ -20,4 +20,10 @@ class ReturnTest extends BaseTest {
         assertEq(result, 2);
     }
 
+    @Test
+    public void testNestedReturn() {
+        final AbstractJsObject<?> result = runFromString("function test () { if (true) { if (true) { return 2 } } return 1 } return test();");
+        assertEq(result, 2);
+    }
+
 }
