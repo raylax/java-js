@@ -447,7 +447,8 @@ public class ASTEvaluator extends AbstractJsParserVisitor {
                 if (r.isCtrl()) {
                     final JsControl ctrl = r.asCtrl();
                     if (ctrl.isReturn()) {
-                        return ctrl.getValue();
+                        result = unWrapValue(ctrl);
+                        break;
                     }
                     if (ctrl.isBreak()) {
                         break;
