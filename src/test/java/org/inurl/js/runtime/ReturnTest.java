@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 /**
  * @author raylax
  */
-class ReturnTest extends BaseTest {
+public class ReturnTest extends BaseTest {
 
     @Test
     public void testGlobalReturn() {

@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 /**
  * @author raylax
  */
-class BlockTest extends BaseTest {
+public class BlockTest extends BaseTest {
 
     @Test
     public void testString() {

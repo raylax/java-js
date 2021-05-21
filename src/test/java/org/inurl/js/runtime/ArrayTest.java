@@ -9,7 +9,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * @author raylax
  */
-class ArrayTest extends BaseTest {
+public class ArrayTest extends BaseTest {
 
     @Test
     public void testArray() {
