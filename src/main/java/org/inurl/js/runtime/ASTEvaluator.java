@@ -447,7 +447,7 @@ public class ASTEvaluator extends AbstractJsParserVisitor {
                 if (r.isCtrl()) {
                     final JsControl ctrl = r.asCtrl();
                     if (ctrl.isReturn()) {
-                        result = unWrapValue(ctrl);
+                        result = r;
                         break;
                     }
                     if (ctrl.isBreak()) {
@@ -460,7 +460,7 @@ public class ASTEvaluator extends AbstractJsParserVisitor {
             result = visit(block.defaultClause().statementList());
         }
         popStack();
-        return result;
+        return unWrapValue(result);
     }
 
     @Override
