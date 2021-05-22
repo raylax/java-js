@@ -3,6 +3,19 @@
 [![codecov](https://codecov.io/gh/raylax/java-js/branch/master/graph/badge.svg?token=jeohIpN2RI)](https://codecov.io/gh/raylax/java-js)
 ![license](https://img.shields.io/github/license/raylax/java-js)
 
+## 运行效果
+```java
+String code = "let a; for (a = 0; a < 5;) { console.error(++a) }";
+new Runtime().run(CharStreams.fromString(code));
+// 1
+// 2
+// 3
+// 4
+// 5
+```
+
+## 功能实现
+### 基础
 - [x] 基础类型
 - [x] 数组类型
 - [x] 对象类型
