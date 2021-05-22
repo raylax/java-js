@@ -339,6 +339,11 @@ public class ASTEvaluator extends AbstractJsParserVisitor {
         return result.left.asBoolean().or(result.right.asBoolean());
     }
 
+    @Override
+    public AbstractJsObject<?> visitNotExpression(NotExpressionContext ctx) {
+        return visit(ctx.singleExpression()).asBoolean().not();
+    }
+
     /**
      * n ? a : b
      */

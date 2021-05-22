@@ -43,6 +43,9 @@ class OpTest extends BaseTest {
         assertEq(runFromString("true ? 1 : 2"), 1);
         assertEq(runFromString("false ? 1 : 2"), 2);
 
+        assertEq(runFromString("!true"), false);
+        assertEq(runFromString("!false"), true);
+
     }
 
 

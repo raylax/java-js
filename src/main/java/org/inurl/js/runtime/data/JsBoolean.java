@@ -22,6 +22,10 @@ public class JsBoolean extends AbstractJsObject<Boolean> {
         return new JsBoolean(this.value || other.value);
     }
 
+    public JsBoolean not() {
+        return new JsBoolean(!this.value);
+    }
+
     @Override
     public JsNumber asNumber() {
         return new JsNumber(value ? 1 : 0);
