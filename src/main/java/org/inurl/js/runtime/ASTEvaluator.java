@@ -322,6 +322,43 @@ public class ASTEvaluator extends AbstractJsParserVisitor {
     }
 
     /**
+     * &&
+     */
+    @Override
+    public AbstractJsObject<?> visitLogicalAndExpression(LogicalAndExpressionContext ctx) {
+        final BinaryExpressionResult result = visitBinaryExpression(ctx.singleExpression());
+        return result.left.asBoolean().and(result.right.asBoolean());
+    }
+
+    /**
+     * ||
+     */
+    @Override
+    public AbstractJsObject<?> visitLogicalOrExpression(LogicalOrExpressionContext ctx) {
+        final BinaryExpressionResult result = visitBinaryExpression(ctx.singleExpression());
+        return result.left.asBoolean().or(result.right.asBoolean());
+    }
+
+    /**
+     * n ? a : b
+     */
+    @Override
+    public AbstractJsObject<?> visitTernaryExpression(TernaryExpressionContext ctx) {
+        return visit(ctx.singleExpression(0)).asBoolean().getValue()
+                ? visit(ctx.singleExpression(1))
+                : visit(ctx.singleExpression(2));
+    }
+
+    /**
+     * n ** m
+     */
+    @Override
+    public AbstractJsObject<?> visitPowerExpression(PowerExpressionContext ctx) {
+        final BinaryExpressionResult result = visitBinaryExpression(ctx.singleExpression());
+        return result.left.asNumber().power(result.right.asNumber());
+    }
+
+    /**
      * n++
      */
     @Override
