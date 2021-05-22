@@ -87,13 +87,11 @@
                         </goals>
                     </execution>
                 </executions>
-                <!--
                 <configuration>
                     <excludes>
                         <exclude>org/inurl/js/lexer/*.class</exclude>
                     </excludes>
                 </configuration>
-                -->
             </plugin>
         </plugins>
     </build>
