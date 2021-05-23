@@ -1,4 +1,4 @@
-# java实现js运行环境
+# javascript runtime
 [![Build Status](https://travis-ci.com/raylax/java-js.svg?branch=master)](https://travis-ci.com/raylax/java-js)
 [![codecov](https://codecov.io/gh/raylax/java-js/branch/master/graph/badge.svg?token=jeohIpN2RI)](https://codecov.io/gh/raylax/java-js)
 ![license](https://img.shields.io/github/license/raylax/java-js)
