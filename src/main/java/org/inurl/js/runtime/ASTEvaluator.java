@@ -135,44 +135,40 @@ public class ASTEvaluator extends AbstractJsParserVisitor {
 
     @Override
     public AbstractJsObject<?> visitMultiplicativeExpression(MultiplicativeExpressionContext ctx) {
-        final BinaryExpressionResult result = visitBinaryExpression(ctx.singleExpression());
-        final JsNumber left = result.left.asNumber();
-        final JsNumber right = result.right.asNumber();
+        final BinaryExpressionResult<JsNumber> result = visitBinaryNumberExpression(ctx.singleExpression());
         if (is(ctx.Multiply())) {
-            return left.multiply(right);
+            return result.left.multiply(result.right);
         }
         if (is(ctx.Divide())) {
-            return left.divide(right);
+            return result.left.divide(result.right);
         }
         if (is(ctx.Modulus())) {
-            return left.modulus(right);
+            return result.left.modulus(result.right);
         }
         throw UNREACHABLE_CODE();
     }
 
     @Override
     public AbstractJsObject<?> visitRelationalExpression(RelationalExpressionContext ctx) {
-        final BinaryExpressionResult result = visitBinaryExpression(ctx.singleExpression());
-        final JsNumber left = result.left.asNumber();
-        final JsNumber right = result.right.asNumber();
+        final BinaryExpressionResult<JsNumber> result = visitBinaryNumberExpression(ctx.singleExpression());
         if (is(ctx.LessThan())) {
-            return left.lessThan(right);
+            return result.left.lessThan(result.right);
         }
         if (is(ctx.MoreThan())) {
-            return left.greaterThan(right);
+            return result.left.greaterThan(result.right);
         }
         if (is(ctx.LessThanEquals())) {
-            return left.lessThanEquals(right);
+            return result.left.lessThanEquals(result.right);
         }
         if (is(ctx.GreaterThanEquals())) {
-            return left.greaterThanEquals(right);
+            return result.left.greaterThanEquals(result.right);
         }
         throw UNREACHABLE_CODE();
     }
 
     @Override
     public AbstractJsObject<?> visitAdditiveExpression(AdditiveExpressionContext ctx) {
-        final BinaryExpressionResult result = visitBinaryExpression(ctx.singleExpression());
+        final BinaryExpressionResult<AbstractJsObject<?>> result = visitBinaryExpression(ctx.singleExpression());
         if (is(ctx.Plus())) {
             if (TypeUtils.allNumber(result.left, result.right)) {
                 return result.left.asNumber().plus(result.right.asNumber());
@@ -187,7 +183,7 @@ public class ASTEvaluator extends AbstractJsParserVisitor {
 
     @Override
     public AbstractJsObject<?> visitEqualityExpression(EqualityExpressionContext ctx) {
-        final BinaryExpressionResult result = visitBinaryExpression(ctx.singleExpression());
+        final BinaryExpressionResult<AbstractJsObject<?>> result = visitBinaryExpression(ctx.singleExpression());
         final boolean v = result.left.equals(result.right);
         if (is(ctx.Equals_()) || is(ctx.IdentityEquals())) {
             return TypeUtils.wrapBoolean(v);
@@ -326,8 +322,8 @@ public class ASTEvaluator extends AbstractJsParserVisitor {
      */
     @Override
     public AbstractJsObject<?> visitLogicalAndExpression(LogicalAndExpressionContext ctx) {
-        final BinaryExpressionResult result = visitBinaryExpression(ctx.singleExpression());
-        return result.left.asBoolean().and(result.right.asBoolean());
+        final BinaryExpressionResult<JsBoolean> result = visitBinaryBooleanExpression(ctx.singleExpression());
+        return result.left.and(result.right);
     }
 
     /**
@@ -335,8 +331,8 @@ public class ASTEvaluator extends AbstractJsParserVisitor {
      */
     @Override
     public AbstractJsObject<?> visitLogicalOrExpression(LogicalOrExpressionContext ctx) {
-        final BinaryExpressionResult result = visitBinaryExpression(ctx.singleExpression());
-        return result.left.asBoolean().or(result.right.asBoolean());
+        final BinaryExpressionResult<JsBoolean> result = visitBinaryBooleanExpression(ctx.singleExpression());
+        return result.left.or(result.right);
     }
 
     @Override
@@ -359,8 +355,8 @@ public class ASTEvaluator extends AbstractJsParserVisitor {
      */
     @Override
     public AbstractJsObject<?> visitPowerExpression(PowerExpressionContext ctx) {
-        final BinaryExpressionResult result = visitBinaryExpression(ctx.singleExpression());
-        return result.left.asNumber().power(result.right.asNumber());
+        final BinaryExpressionResult<JsNumber> result = visitBinaryNumberExpression(ctx.singleExpression());
+        return result.left.power(result.right);
     }
 
     /**
@@ -672,6 +668,79 @@ public class ASTEvaluator extends AbstractJsParserVisitor {
         return JsControl.doReturn(visit(ctx.expressionSequence()));
     }
 
+    /**
+     * +a
+     */
+    @Override
+    public AbstractJsObject<?> visitUnaryPlusExpression(UnaryPlusExpressionContext ctx) {
+        final JsNumber value = visit(ctx.singleExpression()).asNumber();
+        value.setValue(v -> +v);
+        return value;
+    }
+
+    /**
+     * -a
+     */
+    @Override
+    public AbstractJsObject<?> visitUnaryMinusExpression(UnaryMinusExpressionContext ctx) {
+        final JsNumber value = visit(ctx.singleExpression()).asNumber();
+        value.setValue(v -> -v);
+        return value;
+    }
+
+    /**
+     * >> << >>>
+     */
+    @Override
+    public AbstractJsObject<?> visitBitShiftExpression(BitShiftExpressionContext ctx) {
+        final BinaryExpressionResult<JsNumber> result = visitBinaryNumberExpression(ctx.singleExpression());
+        if (is(ctx.LeftShiftArithmetic())) {
+            return result.left.lsh(result.right);
+        }
+        if (is(ctx.RightShiftArithmetic())) {
+            return result.left.rsh(result.right);
+        }
+        if (is(ctx.RightShiftLogical())) {
+            return result.left.rsl(result.right);
+        }
+        throw UNREACHABLE_CODE();
+    }
+
+    /**
+     * a & b
+     */
+    @Override
+    public AbstractJsObject<?> visitBitAndExpression(BitAndExpressionContext ctx) {
+        final BinaryExpressionResult<JsNumber> result = visitBinaryNumberExpression(ctx.singleExpression());
+        return result.left.and(result.right);
+    }
+
+    /**
+     * ~a
+     */
+    @Override
+    public AbstractJsObject<?> visitBitNotExpression(BitNotExpressionContext ctx) {
+        return visit(ctx.singleExpression()).asNumber().not();
+    }
+
+    /**
+     * a | b
+     */
+    @Override
+    public AbstractJsObject<?> visitBitOrExpression(BitOrExpressionContext ctx) {
+        final BinaryExpressionResult<JsNumber> result = visitBinaryNumberExpression(ctx.singleExpression());
+        return result.left.or(result.right);
+    }
+
+    /**
+     * a ^ b
+     */
+    @Override
+    public AbstractJsObject<?> visitBitXOrExpression(BitXOrExpressionContext ctx) {
+        final BinaryExpressionResult<JsNumber> result = visitBinaryNumberExpression(ctx.singleExpression());
+        return result.left.xor(result.right);
+    }
+
     @Override
     protected AbstractJsObject<?> defaultResult() {
         return UNDEFINED;
@@ -738,8 +807,16 @@ public class ASTEvaluator extends AbstractJsParserVisitor {
         return value != null;
     }
 
-    private BinaryExpressionResult visitBinaryExpression(List<SingleExpressionContext> singleExpression) {
-        return new BinaryExpressionResult(visit(singleExpression.get(0)), visit(singleExpression.get(1)));
+    private BinaryExpressionResult<AbstractJsObject<?>> visitBinaryExpression(List<SingleExpressionContext> singleExpression) {
+        return new BinaryExpressionResult<>(visit(singleExpression.get(0)), visit(singleExpression.get(1)));
+    }
+
+    private BinaryExpressionResult<JsNumber> visitBinaryNumberExpression(List<SingleExpressionContext> singleExpression) {
+        return new BinaryExpressionResult<>(visit(singleExpression.get(0)).asNumber(), visit(singleExpression.get(1)).asNumber());
+    }
+
+    private BinaryExpressionResult<JsBoolean> visitBinaryBooleanExpression(List<SingleExpressionContext> singleExpression) {
+        return new BinaryExpressionResult<>(visit(singleExpression.get(0)).asBoolean(), visit(singleExpression.get(1)).asBoolean());
     }
 
     private static double parseInt(TerminalNode node, boolean prefix, int radix) {
@@ -747,10 +824,10 @@ public class ASTEvaluator extends AbstractJsParserVisitor {
         return Integer.parseInt(prefix ? text.substring(2) : text, radix);
     }
 
-    private static class BinaryExpressionResult {
-        private final AbstractJsObject<?> left;
-        private final AbstractJsObject<?> right;
-        private BinaryExpressionResult(AbstractJsObject<?> left, AbstractJsObject<?> right) {
+    private static class BinaryExpressionResult<T extends AbstractJsObject<?>> {
+        private final T left;
+        private final T right;
+        private BinaryExpressionResult(T left, T right) {
             this.left = left;
             this.right = right;
         }

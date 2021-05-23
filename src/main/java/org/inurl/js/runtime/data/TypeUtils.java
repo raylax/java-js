@@ -1,5 +1,6 @@
 package org.inurl.js.runtime.data;
 
+import javax.annotation.Nonnull;
 import java.util.Arrays;
 
 import static org.inurl.js.runtime.data.JsBoolean.FALSE;
@@ -23,6 +24,14 @@ public class TypeUtils {
             return new JsNumber(Double.parseDouble(object.toString()));
         } catch (NumberFormatException ignored) {}
         return new JsNumber(0);
+    }
+
+    public static int toInt(@Nonnull AbstractJsObject<?> v) {
+        final JsNumber number = v.asNumber();
+        if (number.isNan()) {
+            return 0;
+        }
+        return number.getValue().intValue();
     }
 
     public static JsBoolean wrapBoolean(boolean value) {

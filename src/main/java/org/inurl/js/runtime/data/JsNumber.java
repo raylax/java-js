@@ -3,6 +3,8 @@ package org.inurl.js.runtime.data;
 import javax.annotation.Nonnull;
 import java.text.DecimalFormat;
 
+import static org.inurl.js.runtime.data.TypeUtils.toInt;
+
 /**
  * @author raylax
  */
@@ -38,9 +40,6 @@ public class JsNumber extends AbstractJsObject<Double> {
      * +
      */
     public JsNumber plus(@Nonnull JsNumber other) {
-        if (isNan(other)) {
-            return NAN;
-        }
         return new JsNumber(this.value + other.value);
     }
 
@@ -48,9 +47,6 @@ public class JsNumber extends AbstractJsObject<Double> {
      * -
      */
     public JsNumber minus(@Nonnull JsNumber other) {
-        if (isNan(other)) {
-            return NAN;
-        }
         return new JsNumber(this.value - other.value);
     }
 
@@ -58,9 +54,6 @@ public class JsNumber extends AbstractJsObject<Double> {
      * *
      */
     public JsNumber multiply(@Nonnull JsNumber other) {
-        if (isNan(other)) {
-            return NAN;
-        }
         return new JsNumber(this.value * other.value);
     }
 
@@ -68,9 +61,6 @@ public class JsNumber extends AbstractJsObject<Double> {
      * /
      */
     public JsNumber divide(@Nonnull JsNumber other) {
-        if (isNan(other)) {
-            return NAN;
-        }
         return new JsNumber(this.value / other.value);
     }
 
@@ -78,9 +68,6 @@ public class JsNumber extends AbstractJsObject<Double> {
      * %
      */
     public JsNumber modulus(@Nonnull JsNumber other) {
-        if (isNan(other)) {
-            return NAN;
-        }
         return new JsNumber(this.value % other.value);
     }
 
@@ -88,10 +75,56 @@ public class JsNumber extends AbstractJsObject<Double> {
      * **
      */
     public JsNumber power(@Nonnull JsNumber other) {
-        if (isNan(other)) {
-            return NAN;
-        }
         return new JsNumber(Math.pow(this.value, other.value));
+    }
+
+    /**
+     * >>
+     */
+    public JsNumber rsh(@Nonnull JsNumber other) {
+        return new JsNumber(toInt(this) >> toInt(other));
+    }
+
+    /**
+     * <<
+     */
+    public JsNumber lsh(@Nonnull JsNumber other) {
+        return new JsNumber(toInt(this) << toInt(other));
+    }
+
+    /**
+     * >>>
+     */
+    public JsNumber rsl(@Nonnull JsNumber other) {
+        return new JsNumber(toInt(this) >>> toInt(other));
+    }
+
+    /**
+     * &
+     */
+    public JsNumber and(@Nonnull JsNumber other) {
+        return new JsNumber(toInt(this) & toInt(other));
+    }
+
+    /**
+     * |
+     */
+    public JsNumber or(@Nonnull JsNumber other) {
+        return new JsNumber(toInt(this) | toInt(other));
+    }
+
+    /**
+     * ^
+     */
+    public JsNumber xor(@Nonnull JsNumber other) {
+        return new JsNumber(toInt(this) ^ toInt(other));
+    }
+
+    /**
+     * ~
+     */
+    public JsNumber not() {
+        return new JsNumber(~toInt(this));
     }
 
     /**
