@@ -317,6 +317,63 @@ public class ASTEvaluator extends AbstractJsParserVisitor {
         throw UNREACHABLE_CODE();
     }
 
+    @Override
+    public AbstractJsObject<?> visitAssignmentOperatorExpression(AssignmentOperatorExpressionContext ctx) {
+        final BinaryExpressionResult<JsNumber> result = visitBinaryNumberExpression(ctx.singleExpression());
+        final AssignmentOperatorContext op = ctx.assignmentOperator();
+        final JsNumber left = result.left;
+        final JsNumber right = result.right;
+        // *=
+        if (is(op.MultiplyAssign())) {
+            return left.setValue(left.multiply(right));
+        }
+        // /=
+        if (is(op.DivideAssign())) {
+            return left.setValue(left.divide(right));
+        }
+        // %=
+        if (is(op.ModulusAssign())) {
+            return left.setValue(left.modulus(right));
+        }
+        // +=
+        if (is(op.PlusAssign())) {
+            return left.setValue(left.plus(right));
+        }
+        // -=
+        if (is(op.MinusAssign())) {
+            return left.setValue(left.minus(right));
+        }
+        // <<=
+        if (is(op.LeftShiftArithmeticAssign())) {
+            return left.setValue(left.lsh(right));
+        }
+        // >>=
+        if (is(op.RightShiftArithmeticAssign())) {
+            return left.setValue(left.rsh(right));
+        }
+        // >>>=
+        if (is(op.RightShiftLogicalAssign())) {
+            return left.setValue(left.rsl(right));
+        }
+        // &=
+        if (is(op.BitAndAssign())) {
+            return left.setValue(left.and(right));
+        }
+        // |=
+        if (is(op.BitOrAssign())) {
+            return left.setValue(left.or(right));
+        }
+        // ^=
+        if (is(op.BitXorAssign())) {
+            return left.setValue(left.xor(right));
+        }
+        // **
+        if (is(op.PowerAssign())) {
+            return left.setValue(left.power(right));
+        }
+        throw UNREACHABLE_CODE();
+    }
+
     /**
      * &&
      */

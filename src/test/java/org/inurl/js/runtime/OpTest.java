@@ -55,6 +55,19 @@ class OpTest extends BaseTest {
         assertEq(runFromString("6 ^ 2"), 6 ^ 2);
         assertEq(runFromString("~6"), ~6);
 
+        assertEq(runFromString("let a = 6; a += 2; return a;"), 6 + 2);
+        assertEq(runFromString("let a = 6; a -= 2; return a;"), 6 - 2);
+        assertEq(runFromString("let a = 6; a *= 2; return a;"), 6 * 2);
+        assertEq(runFromString("let a = 6; a /= 2; return a;"), 6 / 2);
+        assertEq(runFromString("let a = 6; a %= 2; return a;"), 6 % 2);
+        assertEq(runFromString("let a = 6; a <<= 2; return a;"), 6 << 2);
+        assertEq(runFromString("let a = 6; a >>= 2; return a;"), 6 >> 2);
+        assertEq(runFromString("let a = 6; a >>>= 2; return a;"), 6 >>> 2);
+        assertEq(runFromString("let a = 6; a &= 2; return a;"), 6 & 2);
+        assertEq(runFromString("let a = 6; a |= 2; return a;"), 6 | 2);
+        assertEq(runFromString("let a = 6; a ^= 2; return a;"), 6 ^ 2);
+        assertEq(runFromString("let a = 6; a **= 2; return a;"), Math.pow(6, 2));
+
     }
 
 

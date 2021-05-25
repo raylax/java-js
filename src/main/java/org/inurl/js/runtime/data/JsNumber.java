@@ -36,6 +36,11 @@ public class JsNumber extends AbstractJsObject<Double> {
         return new JsNumber(this.value);
     }
 
+    public JsNumber setValue(JsNumber n) {
+        this.value = n.value;
+        return this;
+    }
+
     /**
      * +
      */
