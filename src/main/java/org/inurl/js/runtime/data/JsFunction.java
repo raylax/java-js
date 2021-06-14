@@ -80,9 +80,7 @@ public abstract class JsFunction extends AbstractJsObject<Object> implements Dat
 
         @Override
         public AbstractJsObject<?> call(List<AbstractJsObject<?>> arguments) {
-            final AbstractJsObject<?> result = visitor.visit(tree);
-
-            return result;
+            return visitor.visit(tree);
         }
 
         @Override
